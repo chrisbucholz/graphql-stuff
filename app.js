@@ -6,8 +6,10 @@ const app = express();
 const { ApolloServer } = require('apollo-server');
 const typeDefs = require('./schema');
 const resolvers = require('./resolvers');
-const PlayerAPI = require('./datasources/player');
 const ClientAPI = require('./datasources/client');
+const ClientProgramAPI = require('./datasources/clientProgram');
+const ClinicianProgramAPI = require('./datasources/clinicianProgram');
+const ProgramAPI = require('./datasources/program');
 
 const port = 5000;
 
@@ -30,32 +32,18 @@ const server = new ApolloServer({
     typeDefs, 
     resolvers,
     dataSources: () => ({
-        //playerAPI: new PlayerAPI({ db })
-        clientAPI: new ClientAPI({db})
+        clientAPI: new ClientAPI({db}),
+        clientProgramAPI: new ClientProgramAPI({db}),
+        clinicianProgramAPI: new ClinicianProgramAPI({db}),
+        programAPI: new ProgramAPI({db})
     })
 });
 
-// app.get('/put', function (req, res) {
-//     console.log('doing the put')
-//     db.query(`INSERT INTO players 
-//         (first_name,last_name,position,number,image,user_name)
-//         VALUES 
-//         ('Buddy','Budderson','Forward',11,'derf.jpg','bbudd')`);
-//     res.send('did our put request');
-// });
-
-// app.get('/get', function (req, res) {
-//     console.log('doing the get.')
-//     db.query(`SELECT * FROM players`, function (err, result) {
-//         res.send(JSON.stringify(result));    
-//     });
-// });
-
+// Good chance we don't need this Express stuff any more for graphQl
 app.set('port', process.env.port || port); // set express to use this port
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // parse form data client
 app.use(express.static(path.join(__dirname, 'public'))); // configure express to use public folder
-
 app.listen(port, () => {
     console.log(`Server running on port: ${port}`);
 });
