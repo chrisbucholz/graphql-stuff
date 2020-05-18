@@ -206,7 +206,11 @@ INSERT INTO `client_program` (`cp_program_id`, `cp_client_id`, `cp_program`, `cp
 (162, 162, 2, 1581120000, NULL, NULL),
 (163, 163, 2, 1581120000, NULL, NULL),
 (164, 164, 2, 1581120000, NULL, NULL),
-(165, 165, 2, 1581120000, NULL, NULL);
+(165, 165, 2, 1581120000, NULL, NULL),
+(166, 1, 2, 1581120000, NULL, NULL),
+(167, 2, 2, 1581120000, NULL, NULL),
+(168, 3, 2, 1581120000, NULL, NULL);
+
 
 --
 -- Indexes for dumped tables
