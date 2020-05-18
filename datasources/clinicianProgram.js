@@ -1,9 +1,11 @@
 const { DataSource } = require('apollo-datasource');
+const DataLoader = require('dataloader');
 
 class ClinicianProgramAPI extends DataSource {
     constructor({ db }) {
         super();
         this.db = db;
+        this.clinicianProgramLoader = new DataLoader((items) => this.getClinicianProgramsByIds({clinicianProgramIds: items}));
     }
 
     initialize(config) {
@@ -11,11 +13,16 @@ class ClinicianProgramAPI extends DataSource {
     }
 
     async getClinicianProgramById({ clinicianProgramId: id }) {
-        const found = await new Promise((resolve, reject) => db.query(`SELECT * FROM clinician_program WHERE clp_clinician_program_id=${id}`, (err, res) => {
+        return this.clinicianProgramLoader.load(id);
+    }
+
+    async getClinicianProgramByIds({ clinicianProgramIds: ids }) {
+        const joinedIds = ids.join(',');
+        const found = await new Promise((resolve, reject) => db.query(`SELECT * FROM clinician_program WHERE clp_clinician_program_id IN (${joinedIds})`, (err, res) => {
             if (err) reject(err);
             resolve(res);
         }));
-        return found[0];
+        return found;
     }
 
     async getClinicianProgramsByProgramId({ programId: id }) {

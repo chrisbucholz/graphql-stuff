@@ -6,7 +6,7 @@ class ClientAPI extends DataSource {
         super();
         this.db = db;
         this.clientLoader = new DataLoader((items) => this.getClientsByIds({clientIds: items}));
-  }
+    }
 
     initialize(config) {
         this.context = config.context;
