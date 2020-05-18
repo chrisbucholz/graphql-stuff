@@ -6,6 +6,7 @@ class ClientProgramAPI extends DataSource {
         super();
         this.db = db;
         this.clientProgramLoader = new DataLoader((items) => this.getClientProgramsByIds({programIds: items}));
+        this.clientProgramsByClientLoader = new DataLoader((items) => this.getClientProgramsByClientIds({clientIds: items}));
     }
 
     initialize(config) {
@@ -26,9 +27,23 @@ class ClientProgramAPI extends DataSource {
     }
 
     async getClientProgramsByClientId({ clientId: id }) {
-        const found = await new Promise((resolve, reject) => db.query(`SELECT * FROM client_program WHERE cp_client_id=${id}`, (err, res) => {
+        return this.clientProgramsByClientLoader.load(id);
+    }
+
+    async getClientProgramsByClientIds({ clientIds: ids }) {
+        const joinedIds = ids.join(',');
+        const found = await new Promise((resolve, reject) => db.query(`SELECT * FROM client_program WHERE cp_client_id IN (${joinedIds})`, (err, res) => {
             if (err) reject(err);
-            resolve(res);
+            let composedResult = new Map();
+            ids.forEach(item => {
+                composedResult.set(item,[]);
+            })
+            res.forEach(item => {
+                const curr = composedResult.get(item.cp_client_id);
+                composedResult.set(item.cp_client_id,[...curr,item]);
+            })
+            const finalResult = Array.from(composedResult.values());
+            resolve(finalResult);
         }));
         return found;
     }
