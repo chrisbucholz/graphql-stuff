@@ -1,6 +1,10 @@
 const { gql } = require('apollo-server');
 
 const typeDefs = gql`
+
+    directive @toOne on FIELD_DEFINITION
+    directive @toMany on FIELD_DEFINITION
+
     type Client {
         c_client_id: ID!
         c_first_name: String
@@ -9,9 +13,22 @@ const typeDefs = gql`
         c_dob: Int
         c_file_no: String
         programs: [ClientProgram]
+        programsexp: [ClientProgramExp] @toMany
     }
 
     type ClientProgram {
+        cp_program_id: ID!
+        cp_client_id: Int!
+        cp_program: Int!
+        cp_referral_date: Int
+        cp_start_date: Int
+        cp_discharge_date: Int
+        client: Client! @toOne
+        program: Program! @toOne
+        clinicians: [ClinicianProgram] @toMany
+    }
+
+    type ClientProgramExp {
         cp_program_id: ID!
         cp_client_id: Int!
         cp_program: Int!
@@ -30,7 +47,7 @@ const typeDefs = gql`
         clp_start_date: Int
         clp_discharge_date: Int
         clp_name: String!
-        program: ClientProgram!
+        program: ClientProgram! @toOne
     }
 
     type Program {
