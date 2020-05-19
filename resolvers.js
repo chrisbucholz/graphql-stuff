@@ -5,6 +5,7 @@ module.exports = {
         clientProgram: (_, { id }, { dataSources }) => dataSources.clientProgramAPI.getClientProgramById({ programId: id }),
         clientProgramsByClient: (_, { id }, { dataSources }) => dataSources.clientProgramAPI.getClientProgramsByClientId({ clientId: id }),
         clinicianProgram: (_, { id }, { dataSources }) => dataSources.clinicianProgramAPI.getClinicianProgramById({ clinicianProgramId: id }),
+        clientexp: (_, { id }, { dataSources }, info) => dataSources.clientAPI.getClientByIdExp({ clientId: id, info })
     },
 
     Client : {

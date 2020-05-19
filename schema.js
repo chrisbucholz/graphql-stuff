@@ -42,6 +42,7 @@ const typeDefs = gql`
     type Query {
         clients: [Client]!
         client(id: ID!): Client
+        clientexp(id: ID!): Client
         clientProgram(id: ID!): ClientProgram
         clientProgramsByClient(id: ID!): [ClientProgram]
         clinicianProgram(id: ID!): ClinicianProgram
