@@ -44,8 +44,19 @@ class ClientAPI extends DataSource {
     }
 
     async getClientByIdExp({ clientId, info }) {
-        const found = await this.knexDb.from("client").where({ c_client_id:clientId }).first();
-        return found;
+        const query = info.fieldNodes.find(field => field.name.value === info.fieldName);
+
+        const sql = this.knexDb.from("client").where({ c_client_id:clientId }).first();
+
+        console.log(query.selectionSet.selections);
+
+        for (const field of query.selectionSet.selections
+            //.filter(isFieldNode)
+            //.filter(f => f.name.value !== "post")
+        ) {
+            sql.select(field.name.value);
+        }
+        return await sql;
     }
 }
 
