@@ -3,6 +3,15 @@ module.exports = {
         clients: (_, __, { dataSources }) => dataSources.clientAPI.getAllClients(),
         client: (_, { id }, { dataSources }) => dataSources.clientAPI.getClientById({ clientId: id }),
         clientProgram: (_, { id }, { dataSources }) => dataSources.clientProgramAPI.getClientProgramById({ programId: id }),
+        clientProgramExp: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGet(
+            {
+                rootSchema: "ClientProgramExp", 
+                rootTable: "client_program", 
+                rootWhereColumn: "cp_program_id", 
+                rootWhereValue: id, 
+                info: info 
+            }
+        ),
         clientProgramsByClient: (_, { id }, { dataSources }) => dataSources.clientProgramAPI.getClientProgramsByClientId({ clientId: id }),
         clinicianProgram: (_, { id }, { dataSources }) => dataSources.clinicianProgramAPI.getClinicianProgramById({ clinicianProgramId: id }),
         clientexp: (_, { id }, { dataSources }, info) => dataSources.clientAPI.getClientByIdExp({ clientId: id, info }),
