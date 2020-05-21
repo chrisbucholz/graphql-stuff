@@ -3,7 +3,7 @@ const { gql } = require('apollo-server');
 const typeDefs = gql`
 
     directive @toOne on FIELD_DEFINITION
-    directive @toMany on FIELD_DEFINITION
+    directive @toMany(table: String, leftCol: String, rightCol: String) on FIELD_DEFINITION
 
     type Client {
         c_client_id: ID!
@@ -13,7 +13,7 @@ const typeDefs = gql`
         c_dob: Int
         c_file_no: String
         programs: [ClientProgram]
-        programsexp: [ClientProgramExp] @toMany
+        programsexp: [ClientProgramExp] @toMany(table:"client_program", leftCol: "c_client_id", rightCol: "cp_client_id")
     }
 
     type ClientProgram {
@@ -25,7 +25,7 @@ const typeDefs = gql`
         cp_discharge_date: Int
         client: Client! @toOne
         program: Program! @toOne
-        clinicians: [ClinicianProgram] @toMany
+        clinicians: [ClinicianProgram] @toMany(table:"clinician_program", leftCol: "cp_program_id", rightCol: "clp_client_program")
     }
 
     type ClientProgramExp {
@@ -60,6 +60,7 @@ const typeDefs = gql`
         clients: [Client]!
         client(id: ID!): Client
         clientexp(id: ID!): Client
+        clientexp2(id: ID!): Client
         clientProgram(id: ID!): ClientProgram
         clientProgramsByClient(id: ID!): [ClientProgram]
         clinicianProgram(id: ID!): ClinicianProgram

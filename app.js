@@ -10,6 +10,7 @@ const ClientAPI = require('./datasources/client');
 const ClientProgramAPI = require('./datasources/clientProgram');
 const ClinicianProgramAPI = require('./datasources/clinicianProgram');
 const ProgramAPI = require('./datasources/program');
+const GeneralAPI = require('./datasources/general');
 
 const port = 5000;
 
@@ -22,6 +23,7 @@ const db = mysql.createConnection ({
 
 db.connect((err) => {
     if (err) {
+        console.error('Failed to connect to database');
         throw err;
     }
     console.log('Connected to database');
@@ -35,7 +37,8 @@ const server = new ApolloServer({
         clientAPI: new ClientAPI({db}),
         clientProgramAPI: new ClientProgramAPI({db}),
         clinicianProgramAPI: new ClinicianProgramAPI({db}),
-        programAPI: new ProgramAPI({db})
+        programAPI: new ProgramAPI({db}),
+        generalAPI: new GeneralAPI({db}),
     })
 });
 
