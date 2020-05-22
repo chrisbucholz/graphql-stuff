@@ -31,6 +31,15 @@ class GeneralAPI extends DataSource {
             sql.select(field.name.value);
         }
 
+        // Ensure we fetch the leftCol value for all toMany relationships to use for the subqueries
+        for (const field of query.selectionSet.selections
+            .filter(field => this.getDirective(type, field, 'toMany'))
+        ) {
+            const directive = this.getDirective(type, field, 'toMany');
+            const leftCol = directive.arguments.find(arg => arg.name.value==="leftCol").value.value;
+            sql.select(leftCol);
+        }
+
         for (const field of query.selectionSet.selections
             .filter(field => this.getDirective(type, field, 'toOne'))
         ) {
@@ -65,15 +74,13 @@ class GeneralAPI extends DataSource {
             const table = directive.arguments.find(arg => arg.name.value==="table").value.value;
             const leftCol = directive.arguments.find(arg => arg.name.value==="leftCol").value.value;
             const rightCol = directive.arguments.find(arg => arg.name.value==="rightCol").value.value;
-            // TODO get the rootWhereValue a little more dynamically than not at all. 
-            // leftCol really needs to be fetched a stage earlier so it's available.
-
-            const innerSql = this.knexDb.from(table).where({ [rightCol]:rootWhereValue });
+            const innerSql = this.knexDb.from(table).where({ [rightCol]:partialResult[leftCol] });
             for (const innerField of field.selectionSet.selections) {
                 innerSql.select(innerField.name.value);
             }
             partialResult[field.name.value] = await innerSql;
         }
+        //console.log(partialResult);
         return partialResult;
     }
 
