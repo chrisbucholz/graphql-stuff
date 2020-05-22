@@ -22,9 +22,9 @@ class GeneralAPI extends DataSource {
 
     async generalGet({ rootSchema, rootTable, rootWhereColumn, rootWhereValue, info }) {
         const query = info.fieldNodes.find(field => field.name.value === info.fieldName);
-        const sql = this.knexDb.from(rootTable).where({ [rootWhereColumn]:rootWhereValue }).first();
         const type = info.schema.getType(rootSchema).astNode;
-
+        const sql = this.knexDb.from(rootTable).where({ [rootWhereColumn]:rootWhereValue }).first();
+        
         for (const field of query.selectionSet.selections
             .filter(field => !this.getDirective(type, field, 'toOne') && !this.getDirective(type, field, 'toMany'))
         ) {
@@ -38,7 +38,7 @@ class GeneralAPI extends DataSource {
             const table = directive.arguments.find(arg => arg.name.value==="table").value.value;
             const leftCol = directive.arguments.find(arg => arg.name.value==="leftCol").value.value;
             const rightCol = directive.arguments.find(arg => arg.name.value==="rightCol").value.value;
-            sql.leftJoin(table, leftCol , rightCol);
+            sql.leftJoin(table, leftCol, rightCol);
             for (const innerField of field.selectionSet.selections) {
                 sql.select(innerField.name.value);
             }
@@ -46,7 +46,7 @@ class GeneralAPI extends DataSource {
 
         const partialResult = await sql;
 
-        // TODO make this an unflatten() function? Needs to be recursive, as well
+        // Turn the flat row of results into a JSON tree
         for (const field of query.selectionSet.selections
             .filter(field => this.getDirective(type, field, 'toOne'))
         ) {
@@ -65,19 +65,23 @@ class GeneralAPI extends DataSource {
             const table = directive.arguments.find(arg => arg.name.value==="table").value.value;
             const leftCol = directive.arguments.find(arg => arg.name.value==="leftCol").value.value;
             const rightCol = directive.arguments.find(arg => arg.name.value==="rightCol").value.value;
-            // TODO get the rootWhereVal a little more dynamically than not at all. 
+            // TODO get the rootWhereValue a little more dynamically than not at all. 
             // leftCol really needs to be fetched a stage earlier so it's available.
-            partialResult[field.name.value] = await this.knexDb.from(table).where({ [rightCol]:rootWhereValue }).select();
+
+            const innerSql = this.knexDb.from(table).where({ [rightCol]:rootWhereValue });
+            for (const innerField of field.selectionSet.selections) {
+                innerSql.select(innerField.name.value);
+            }
+            partialResult[field.name.value] = await innerSql;
         }
-        console.log(partialResult);
         return partialResult;
     }
 
     getDirective(type, field, directive) {
-        const fieldType = type.fields.filter(f => f.name.value === field.name.value);
-        const directives = fieldType[0].directives;
-        const found = directives && directives.filter(f => f.name.value === directive);
-        return found[0];
+        const fieldType = type.fields.find(f => f.name.value === field.name.value);
+        const directives = fieldType.directives;
+        const found = directives && directives.find(f => f.name.value === directive);
+        return found;
     }
 }
 
