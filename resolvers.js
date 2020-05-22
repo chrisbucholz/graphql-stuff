@@ -1,34 +1,10 @@
-
-// TODO - Split this into a seperate schema for exp
-// In App.js include a flag to use experimental mode
-// Separate schema will not include the recursive 'Client', etc, resolvers. Just dumps all the Queries into generalAPI somehow
-// This schema, cleaned up, will remove the exp cruft
-
 module.exports = {
     Query: {
         clients: (_, __, { dataSources }) => dataSources.clientAPI.getAllClients(),
         client: (_, { id }, { dataSources }) => dataSources.clientAPI.getClientById({ clientId: id }),
         clientProgram: (_, { id }, { dataSources }) => dataSources.clientProgramAPI.getClientProgramById({ programId: id }),
-        clientProgramExp: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGet(
-            {
-                rootSchema: "ClientProgramExp", 
-                rootTable: "client_program", 
-                rootWhereColumn: "cp_program_id", 
-                rootWhereValue: id, 
-                info: info 
-            }
-        ),
         clientProgramsByClient: (_, { id }, { dataSources }) => dataSources.clientProgramAPI.getClientProgramsByClientId({ clientId: id }),
         clinicianProgram: (_, { id }, { dataSources }) => dataSources.clinicianProgramAPI.getClinicianProgramById({ clinicianProgramId: id }),
-        clientexp: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGet(
-            {
-                rootSchema: "Client", 
-                rootTable: "client", 
-                rootWhereColumn: "c_client_id", 
-                rootWhereValue: id, 
-                info: info 
-            }
-        ),
     },
 
     Client : {

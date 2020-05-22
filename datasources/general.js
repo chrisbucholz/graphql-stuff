@@ -69,7 +69,7 @@ class GeneralAPI extends DataSource {
             // leftCol really needs to be fetched a stage earlier so it's available.
             partialResult[field.name.value] = await this.knexDb.from(table).where({ [rightCol]:rootWhereValue }).select();
         }
-
+        console.log(partialResult);
         return partialResult;
     }
 

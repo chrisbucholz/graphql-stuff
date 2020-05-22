@@ -4,13 +4,16 @@ const mysql = require('mysql');
 const path = require('path');
 const app = express();
 const { ApolloServer } = require('apollo-server');
-const typeDefs = require('./schema');
-const resolvers = require('./resolvers');
 const ClientAPI = require('./datasources/client');
 const ClientProgramAPI = require('./datasources/clientProgram');
 const ClinicianProgramAPI = require('./datasources/clinicianProgram');
 const ProgramAPI = require('./datasources/program');
 const GeneralAPI = require('./datasources/general');
+
+//const typeDefs = require('./schema');
+//const resolvers = require('./resolvers');
+const typeDefs = require('./schema_exp');
+const resolvers = require('./resolvers_exp');
 
 const port = 5000;
 
