@@ -1,6 +1,6 @@
 module.exports = {
     Query: {
-        clientProgram: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGet(
+        clientProgram: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGetR(
             {
                 rootSchema: "ClientProgram", 
                 rootTable: "client_program", 
@@ -9,7 +9,7 @@ module.exports = {
                 info: info 
             }
         ),
-        client: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGet(
+        client: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGetR(
             {
                 rootSchema: "Client", 
                 rootTable: "client", 

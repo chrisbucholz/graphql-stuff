@@ -101,4 +101,22 @@ generalGet()
     attach them to partialResult
     do my regular toManys now? Or just fold them into the above step?
             
+Let's first do:
+FieldRecurse(fields)
+    A foreach on all fields
+        If it's normal, add to select
+        If it's toOne
+            Join
+            FieldRecurse innerFields
+        If it's toMany
+            Add leftCol to select
+            Add subquery to [Subqueries]
+    Done. You return:
+        select (kept in higher closure?)
+        [Subqueries] (kept in higher closure?)
+run the sql
+unflatten
+foreach Subqueries
+    GeneralGet(Subquery)
+
 
