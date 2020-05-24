@@ -101,10 +101,11 @@ class GeneralAPI extends DataSource {
             selections = info.fieldNodes.find(field => field.name.value === info.fieldName).selectionSet.selections;
         }
         
+        console.log('YEEEET:' + rootWhereColumn + ':' + rootWhereValue);
         const type = info.schema.getType(rootSchema).astNode;
         const sql = multiple 
-            ? this.knexDb.from(rootTable).where({ [rootWhereColumn]:rootWhereValue })
-            : this.knexDb.from(rootTable).where({ [rootWhereColumn]:rootWhereValue }).first();
+            ? this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue)
+            : this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue).first();
         
         let subqueries = [];
         
@@ -159,19 +160,24 @@ class GeneralAPI extends DataSource {
                 delete partialResult[innerField.name.value];
             }
         }
-        
+        console.log('BEFORE SUBQUERIES');
+        console.log(partialResult,null,2);
         // toMany subquery via recursion
         for (const subquery of subqueries) {
+            //console.log('Subquery:');
+            //console.log(subquery);
             let currNode = partialResult;
+            let lastNode = partialResult;
             for (const node of subquery.path) {
+                lastNode = currNode;
                 currNode = currNode[node];
             }
-
+            
             const subqueryResult = await this.generalGetR({ 
                 rootSchema: subquery.subqueryType, 
                 rootTable: subquery.table, 
                 rootWhereColumn: subquery.rightCol, 
-                rootWhereValue: currNode[subquery.leftCol],
+                rootWhereValue: [lastNode[subquery.leftCol]],
                 info: info,
                 selections: subquery.selections,
                 multiple : true

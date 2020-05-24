@@ -1,20 +1,24 @@
 module.exports = {
     Query: {
+        //clientProgram: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGet(
         clientProgram: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGetR(
             {
                 rootSchema: "ClientProgram", 
                 rootTable: "client_program", 
                 rootWhereColumn: "cp_program_id", 
-                rootWhereValue: id, 
+                //rootWhereValue: id, 
+                rootWhereValue: [id], 
                 info: info 
             }
         ),
+        //client: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGet(
         client: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGetR(
             {
                 rootSchema: "Client", 
                 rootTable: "client", 
                 rootWhereColumn: "c_client_id", 
-                rootWhereValue: id, 
+                //rootWhereValue: id, 
+                rootWhereValue: [id], 
                 info: info 
             }
         ),

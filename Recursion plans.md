@@ -120,3 +120,10 @@ foreach Subqueries
     GeneralGet(Subquery)
 
 
+
+
+toMany() inside a toMany()
+Ok, need to get all the possible LeftCols before I pass them in to GeneralGetR
+And then when I get the result, assign it carefully over all of the rows in currNode? lastNode?
+
+
