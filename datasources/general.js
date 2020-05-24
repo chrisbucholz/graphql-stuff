@@ -101,14 +101,15 @@ class GeneralAPI extends DataSource {
             selections = info.fieldNodes.find(field => field.name.value === info.fieldName).selectionSet.selections;
         }
         
-        console.log('YEEEET:' + rootWhereColumn + ':' + rootWhereValue);
+        //console.log('GENERALGETR BEGINS:' + rootWhereColumn + ':' + rootWhereValue);
         const type = info.schema.getType(rootSchema).astNode;
         const sql = multiple 
             ? this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue)
             : this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue).first();
         
+        sql.select(rootWhereColumn);        // needed to differentiate toMany results
         let subqueries = [];
-        
+
         const fieldRecurse = (selections, path) => {
             for (const field of selections) {
                 const toOneDirective = this.getDirective(type, field, 'toOne');
@@ -147,9 +148,8 @@ class GeneralAPI extends DataSource {
         }
 
         fieldRecurse(selections, []);
-
         const partialResult = await sql;
-
+        
         // Turn the flat row of results into a JSON tree
         for (const field of selections
             .filter(field => this.getDirective(type, field, 'toOne'))
@@ -160,31 +160,66 @@ class GeneralAPI extends DataSource {
                 delete partialResult[innerField.name.value];
             }
         }
-        console.log('BEFORE SUBQUERIES');
-        console.log(partialResult,null,2);
+        //console.log('BEFORE SUBQUERIES');
+        //console.log(partialResult);
+        //console.log(JSON.stringify(subqueries,null,2));
         // toMany subquery via recursion
         for (const subquery of subqueries) {
             //console.log('Subquery:');
             //console.log(subquery);
-            let currNode = partialResult;
-            let lastNode = partialResult;
-            for (const node of subquery.path) {
-                lastNode = currNode;
-                currNode = currNode[node];
+            let rootWhereValues = [];
+            let currNodes = [];
+            if (!Array.isArray(partialResult)) {
+                let currNode = partialResult;
+                let lastNode = partialResult;
+                for (const node of subquery.path) {
+                    lastNode = currNode;
+                    currNode = currNode[node];
+                }
+                rootWhereValues.push(lastNode[subquery.leftCol]);
+                currNodes.push(currNode);
+                currNode[subquery.field] = [];
+            } else {
+                partialResult.forEach(pr => {
+                    let currNode = pr;
+                    let lastNode = pr;
+                    for (const node of subquery.path) {
+                        lastNode = currNode;
+                        currNode = currNode[node];
+                    }
+                    rootWhereValues.push(lastNode[subquery.leftCol]);
+                    currNodes.push(currNode);
+                    currNode[subquery.field] = [];
+                })
             }
+            
+            //console.log('partialResult before fetch:');
+            //console.log(partialResult);
             
             const subqueryResult = await this.generalGetR({ 
                 rootSchema: subquery.subqueryType, 
                 rootTable: subquery.table, 
                 rootWhereColumn: subquery.rightCol, 
-                rootWhereValue: [lastNode[subquery.leftCol]],
+                rootWhereValue: rootWhereValues,
                 info: info,
                 selections: subquery.selections,
                 multiple : true
             });
+            //console.log('Subquery returned:');
+            //console.log(JSON.stringify(subqueryResult,null,2));
             
-            currNode[subquery.field] = subqueryResult;
+            if (currNodes.length === 1) {      
+                currNodes[0][subquery.field] = subqueryResult;
+            } else {
+                subqueryResult.forEach(sr => {
+                    const srKey = sr[subquery.rightCol]; 
+                    const foundNode = currNodes.find(f => f[subquery.leftCol] === srKey);        
+                    foundNode[subquery.field] = [sr];
+                })
+            }
         }
+        //console.log('ALL DONE:');
+        //console.log(partialResult);        
         return partialResult;
     }
 
