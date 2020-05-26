@@ -20,12 +20,12 @@ class GeneralAPI extends DataSource {
         this.context = config.context;
     }
 
-    async generalGetR({ rootSchema, rootTable, rootWhereColumn, rootWhereValue, info, selections = null, multiple = false, selectAll = false }) {
+    async generalGetR({ rootSchema, rootTable, rootWhereColumn, rootWhereValue, info, selections = null, multiple = false }) {
         if (!selections) {
             selections = info.fieldNodes.find(field => field.name.value === info.fieldName).selectionSet.selections;
         }
         const type = info.schema.getType(rootSchema).astNode;
-        const sql = selectAll
+        const sql = !rootWhereColumn
             ? this.knexDb.from(rootTable)
             : this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue);
 

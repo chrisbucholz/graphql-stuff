@@ -22,11 +22,10 @@ module.exports = {
             {
                 rootSchema: "Client", 
                 rootTable: "client", 
-                rootWhereColumn: "c_client_id", 
+                rootWhereColumn: null, 
                 rootWhereValue: null, 
                 info: info,
-                multiple: true,
-                selectAll: true 
+                multiple: true
             }
         ),
         clientProgramsByClient: (_, { id }, { dataSources }, info) => dataSources.generalAPI.generalGetR(
