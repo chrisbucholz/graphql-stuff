@@ -20,92 +20,21 @@ class GeneralAPI extends DataSource {
         this.context = config.context;
     }
 
-    async generalGet({ rootSchema, rootTable, rootWhereColumn, rootWhereValue, info, selections = null, multiple = false }) {
-        if (!selections) {
-            selections = info.fieldNodes.find(field => field.name.value === info.fieldName).selectionSet.selections;
-        }
-        
-        const type = info.schema.getType(rootSchema).astNode;
-        const sql = multiple 
-            ? this.knexDb.from(rootTable).where({ [rootWhereColumn]:rootWhereValue })
-            : this.knexDb.from(rootTable).where({ [rootWhereColumn]:rootWhereValue }).first();
-        
-        // SELECT the requested values only.
-        for (const field of selections
-            .filter(field => !this.getDirective(type, field, 'toOne') && !this.getDirective(type, field, 'toMany'))
-        ) {
-            sql.select(field.name.value);
-        }
-
-        // If we have toMany fields to get, SELECT the leftCol value for the subqueries
-        for (const field of selections
-            .filter(field => this.getDirective(type, field, 'toMany'))
-        ) {
-            const directive = this.getDirective(type, field, 'toMany');
-            const leftCol = directive.arguments.find(arg => arg.name.value==="leftCol").value.value;
-            sql.select(leftCol);
-        }
-
-        // toOne left join and (TBD) recurse.
-        for (const field of selections
-            .filter(field => this.getDirective(type, field, 'toOne'))
-        ) {
-            const directive = this.getDirective(type, field, 'toOne');
-            const table = directive.arguments.find(arg => arg.name.value==="table").value.value;
-            const leftCol = directive.arguments.find(arg => arg.name.value==="leftCol").value.value;
-            const rightCol = directive.arguments.find(arg => arg.name.value==="rightCol").value.value;
-            sql.leftJoin(table, leftCol, rightCol);
-            for (const innerField of field.selectionSet.selections) {
-                sql.select(innerField.name.value);
-            }
-        }
-
-        const partialResult = await sql;
-
-        // Turn the flat row of results into a JSON tree
-        for (const field of selections
-            .filter(field => this.getDirective(type, field, 'toOne'))
-        ) {
-            partialResult[field.name.value] = {};
-            for (const innerField of field.selectionSet.selections) {
-                partialResult[field.name.value][innerField.name.value] = partialResult[innerField.name.value];
-                delete partialResult[innerField.name.value];
-            }
-        }
-        
-        // toMany subquery via recursion
-        for (const field of selections
-            .filter(field => this.getDirective(type, field, 'toMany'))
-        ) {
-            const directive = this.getDirective(type, field, 'toMany');
-            const myType = this.getType(type,field).type.type.name.value;            
-            const table = directive.arguments.find(arg => arg.name.value==="table").value.value;
-            const leftCol = directive.arguments.find(arg => arg.name.value==="leftCol").value.value;
-            const rightCol = directive.arguments.find(arg => arg.name.value==="rightCol").value.value;
-
-            partialResult[field.name.value] = await this.generalGet({ 
-                rootSchema: myType, 
-                rootTable: table, 
-                rootWhereColumn: rightCol, 
-                rootWhereValue: partialResult[leftCol], 
-                info: info,
-                selections: field.selectionSet.selections,
-                multiple : true
-            });            
-        }
-        return partialResult;
-    }
-
-    async generalGetR({ rootSchema, rootTable, rootWhereColumn, rootWhereValue, info, selections = null, multiple = false }) {
+    async generalGetR({ rootSchema, rootTable, rootWhereColumn, rootWhereValue, info, selections = null, multiple = false, selectAll = false }) {
         if (!selections) {
             selections = info.fieldNodes.find(field => field.name.value === info.fieldName).selectionSet.selections;
         }
         
         //console.log('GENERALGETR BEGINS:' + rootWhereColumn + ':' + rootWhereValue);
         const type = info.schema.getType(rootSchema).astNode;
-        const sql = multiple 
-            ? this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue)
-            : this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue).first();
+        
+        const sql = selectAll
+            ? this.knexDb.from(rootTable)
+            : this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue);
+
+        if (!multiple) {
+            sql.first();
+        }
         
         sql.select(rootWhereColumn);        // needed to differentiate toMany results
         let subqueries = [];
