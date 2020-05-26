@@ -24,10 +24,7 @@ class GeneralAPI extends DataSource {
         if (!selections) {
             selections = info.fieldNodes.find(field => field.name.value === info.fieldName).selectionSet.selections;
         }
-        
-        //console.log('GENERALGETR BEGINS:' + rootWhereColumn + ':' + rootWhereValue);
         const type = info.schema.getType(rootSchema).astNode;
-        
         const sql = selectAll
             ? this.knexDb.from(rootTable)
             : this.knexDb.from(rootTable).whereIn(rootWhereColumn,rootWhereValue);
@@ -78,24 +75,34 @@ class GeneralAPI extends DataSource {
 
         fieldRecurse(selections, []);
         const partialResult = await sql;
-        
+
         // Turn the flat row of results into a JSON tree
-        for (const field of selections
-            .filter(field => this.getDirective(type, field, 'toOne'))
-        ) {
-            partialResult[field.name.value] = {};
-            for (const innerField of field.selectionSet.selections) {
-                partialResult[field.name.value][innerField.name.value] = partialResult[innerField.name.value];
-                delete partialResult[innerField.name.value];
+        if (!Array.isArray(partialResult)) {
+            for (const field of selections
+                .filter(field => this.getDirective(type, field, 'toOne'))
+            ) {
+                partialResult[field.name.value] = {};
+                for (const innerField of field.selectionSet.selections) {
+                    partialResult[field.name.value][innerField.name.value] = partialResult[innerField.name.value];
+                    delete partialResult[innerField.name.value];
+                }
             }
+        } else {
+            partialResult.forEach(pr => {
+                for (const field of selections
+                    .filter(field => this.getDirective(type, field, 'toOne'))
+                ) {
+                    pr[field.name.value] = {};
+                    for (const innerField of field.selectionSet.selections) {
+                        pr[field.name.value][innerField.name.value] = pr[innerField.name.value];
+                        delete pr[innerField.name.value];
+                    }
+                }
+            })
         }
-        //console.log('BEFORE SUBQUERIES');
-        //console.log(partialResult);
-        //console.log(JSON.stringify(subqueries,null,2));
-        // toMany subquery via recursion
+
+        // Process all the discovered toMany as seperate subqueries. These will get injected back into generalGetR() and their results pinned to partialResult
         for (const subquery of subqueries) {
-            //console.log('Subquery:');
-            //console.log(subquery);
             let rootWhereValues = [];
             let currNodes = [];
             if (!Array.isArray(partialResult)) {
@@ -122,9 +129,6 @@ class GeneralAPI extends DataSource {
                 })
             }
             
-            //console.log('partialResult before fetch:');
-            //console.log(partialResult);
-            
             const subqueryResult = await this.generalGetR({ 
                 rootSchema: subquery.subqueryType, 
                 rootTable: subquery.table, 
@@ -134,8 +138,6 @@ class GeneralAPI extends DataSource {
                 selections: subquery.selections,
                 multiple : true
             });
-            //console.log('Subquery returned:');
-            //console.log(JSON.stringify(subqueryResult,null,2));
             
             if (currNodes.length === 1) {      
                 currNodes[0][subquery.field] = subqueryResult;
@@ -147,8 +149,6 @@ class GeneralAPI extends DataSource {
                 })
             }
         }
-        //console.log('ALL DONE:');
-        //console.log(partialResult);        
         return partialResult;
     }
 
