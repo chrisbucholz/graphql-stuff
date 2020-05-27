@@ -35,6 +35,7 @@ class GeneralAPI extends DataSource {
         
         sql.select(rootWhereColumn);        // needed to differentiate toMany results
         let subqueries = [];
+        let toOnes = [];
 
         const fieldRecurse = (selections, path) => {
             for (const field of selections) {
@@ -69,6 +70,7 @@ class GeneralAPI extends DataSource {
                     sql.leftJoin(table, leftCol, rightCol);
                     const newPath = [...path, field.name.value]
                     fieldRecurse(field.selectionSet.selections, newPath);
+                    toOnes.push(field);
                 }
             }                
         }
@@ -78,26 +80,10 @@ class GeneralAPI extends DataSource {
 
         // Turn the flat row of results into a JSON tree
         if (!Array.isArray(partialResult)) {
-            for (const field of selections
-                .filter(field => this.getDirective(type, field, 'toOne'))
-            ) {
-                partialResult[field.name.value] = {};
-                for (const innerField of field.selectionSet.selections) {
-                    partialResult[field.name.value][innerField.name.value] = partialResult[innerField.name.value];
-                    delete partialResult[innerField.name.value];
-                }
-            }
+            this.unflattenRow(partialResult,toOnes);
         } else {
             partialResult.forEach(pr => {
-                for (const field of selections
-                    .filter(field => this.getDirective(type, field, 'toOne'))
-                ) {
-                    pr[field.name.value] = {};
-                    for (const innerField of field.selectionSet.selections) {
-                        pr[field.name.value][innerField.name.value] = pr[innerField.name.value];
-                        delete pr[innerField.name.value];
-                    }
-                }
+                this.unflattenRow(pr,toOnes);
             })
         }
 
@@ -163,6 +149,17 @@ class GeneralAPI extends DataSource {
     getType(type, field) {
         return type.fields.find(f => f.name.value === field.name.value);
     }
+
+    unflattenRow(pr, toOnes) {
+        toOnes.forEach(field => {
+            pr[field.name.value] = {};
+            for (const innerField of field.selectionSet.selections) {
+                pr[field.name.value][innerField.name.value] = pr[innerField.name.value];
+                delete pr[innerField.name.value];
+            }
+        })
+    }
+    
 }
 
 module.exports = GeneralAPI;
