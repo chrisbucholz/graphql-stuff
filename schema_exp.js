@@ -34,6 +34,7 @@ const typeDefs = gql`
         clp_start_date: Int
         clp_discharge_date: Int
         clp_name: String!
+        user: User @toOne(table:"user", leftCol: "clp_user", rightCol: "user_id")
         program: ClientProgram! @toOne(table:"client_program", leftCol: "clp_client_program", rightCol: "cp_program_id")
     }
 
@@ -41,6 +42,18 @@ const typeDefs = gql`
         p_program_id: ID!
         p_program_name: String!
         p_program_short_name: String!
+    }
+
+    type User {
+        user_id: ID!
+        user_name: String!
+        role: Role @toOne(table:"role", leftCol: "user_role", rightCol: "role_id")
+    }
+
+    type Role {
+        role_id: ID!
+        role_name: String!
+        role_level: Int
     }
 
     type Query {

@@ -37,14 +37,14 @@ class GeneralAPI extends DataSource {
         let subqueries = [];
         let toOnes = [];
 
-        const fieldRecurse = (selections, path) => {
+        const fieldRecurse = (schemaType, selections, path) => {
             for (const field of selections) {
-                const toOneDirective = this.getDirective(type, field, 'toOne');
-                const toManyDirective = this.getDirective(type, field, 'toMany');
+                const toOneDirective = this.getDirective(schemaType.fields, field, 'toOne');
+                const toManyDirective = this.getDirective(schemaType.fields, field, 'toMany');
                 if (!toOneDirective && !toManyDirective) {
                     sql.select(field.name.value);
                 } else if (toManyDirective) {
-                    const subqueryType = this.getType(type,field).type.type.name.value;            
+                    const subqueryType = this.getTypeName(type,field);
                     const table = toManyDirective.arguments.find(arg => arg.name.value==="table").value.value;
                     const leftCol = toManyDirective.arguments.find(arg => arg.name.value==="leftCol").value.value;
                     const rightCol = toManyDirective.arguments.find(arg => arg.name.value==="rightCol").value.value;
@@ -64,18 +64,20 @@ class GeneralAPI extends DataSource {
                     });
         
                 } else if (toOneDirective) {
+                    const subqueryType = this.getTypeName(schemaType,field);
                     const table = toOneDirective.arguments.find(arg => arg.name.value==="table").value.value;
                     const leftCol = toOneDirective.arguments.find(arg => arg.name.value==="leftCol").value.value;
                     const rightCol = toOneDirective.arguments.find(arg => arg.name.value==="rightCol").value.value;
                     sql.leftJoin(table, leftCol, rightCol);
-                    const newPath = [...path, field.name.value]
-                    fieldRecurse(field.selectionSet.selections, newPath);
+                    const newPath = [...path, field.name.value]; 
+                    const nextSchemaType = info.schema.getType(subqueryType).astNode;
+                    fieldRecurse(nextSchemaType,field.selectionSet.selections, newPath);
                     toOnes.push(field);
                 }
             }                
         }
 
-        fieldRecurse(selections, []);
+        fieldRecurse(type,selections, []);
         const partialResult = await sql;
 
         // Turn the flat row of results into a JSON tree
@@ -138,16 +140,25 @@ class GeneralAPI extends DataSource {
         return partialResult;
     }
 
-    getDirective(type, field, directive) {
-        const fieldType = type.fields.find(f => f.name.value === field.name.value);
+    getDirective(schemaFields, field, directive) {
+        const fieldType = schemaFields.find(f => f.name.value === field.name.value);
         if (!fieldType) return false;
         const directives = fieldType.directives;
         const found = directives && directives.find(f => f.name.value === directive);
         return found;
     }
 
-    getType(type, field) {
+    getType(type, field) { 
         return type.fields.find(f => f.name.value === field.name.value);
+    }
+
+    getTypeName(type, field) {
+        const typeSchema = type.fields.find(f => f.name.value === field.name.value);
+        if (typeSchema.type.kind === "NonNullType" || typeSchema.type.kind === "ListType") {
+            return typeSchema.type.type.name.value;
+        } else {
+            return typeSchema.type.name.value
+        }
     }
 
     unflattenRow(pr, toOnes) {

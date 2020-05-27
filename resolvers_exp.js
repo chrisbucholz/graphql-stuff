@@ -42,7 +42,7 @@ module.exports = {
             {
                 rootSchema: "ClinicianProgram", 
                 rootTable: "clinician_program", 
-                rootWhereColumn: "clp_client_id", 
+                rootWhereColumn: "clp_clinician_program_id", 
                 rootWhereValue: [id], 
                 info: info,
             }

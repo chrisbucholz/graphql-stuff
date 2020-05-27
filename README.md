@@ -13,26 +13,60 @@ app.js can be set up to use a conventional schema and resolvers (`schema.js` and
 
 app.js can also use a more experimental schema and resolver (`schema_exp.js` and `resolvers_exp.js`) which recursively solves the entire graphql query into SQL. This also solves the N+1 problem and reduces the number of queries by making left joins where appropriate, as well as only selecting values requested by the graphql. This is heavily influenced by the ideas discussed in Nick Redmark's articles on Root Resolvers here: [https://blog.smartive.ch/advanced-graphql-patterns-embrace-the-ast-4929647c5bd3](https://blog.smartive.ch/advanced-graphql-patterns-embrace-the-ast-4929647c5bd3)
 
-Sample query to put in the sandbox to get you started:
+Sample queries to put in the sandbox to get you started:
 ```
 {
-  client(id:2) {
+  client(id:1) {
     c_first_name,
     c_last_name,
+    c_dob,
     programs {
-      cp_program_id,
       cp_program,
-      cp_referral_date
-      program {
-        p_program_name,
-        p_program_short_name
-      },
+      cp_referral_date,
+      cp_discharge_date,
       clinicians {
         clp_name,
-        clp_referral_date,
-        clp_start_date
+        clp_start_date,
+        user {
+          user_name,
+          user_id,
+          role {
+            role_name,
+            role_level
+          }
+        }
+      },
+      program {
+        p_program_name
       }
-  	}
+    }
+  }
+  clientProgramsByClient(id:2) {
+    cp_program,
+    cp_referral_date,
+    program {
+      p_program_name,
+      p_program_short_name
+    }
+  }
+  clientProgram(id:3) {
+    cp_program_id,
+    cp_program,
+    cp_referral_date,
+    program {
+      p_program_name
+    }
+  }
+  clinicianProgram(id: 3) {
+    clp_name,
+    clp_start_date,
+    user {
+      user_name,
+      user_id,
+      role {
+        role_name
+      }
+    }
   }
 }
 ```
